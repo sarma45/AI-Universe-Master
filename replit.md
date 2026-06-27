@@ -1,6 +1,6 @@
-# [Project name]
+# AIVerse 2.0
 
-_Replace the heading above with the project's name, and this line with one sentence describing what this app does for users._
+A full-stack AI agent swarm orchestration platform — launch multi-agent task forces, watch them reason and execute in real time, and review structured outputs through a split-pane IDE-style workspace.
 
 ## Run & Operate
 
@@ -14,23 +14,40 @@ _Replace the heading above with the project's name, and this line with one sente
 ## Stack
 
 - pnpm workspaces, Node.js 24, TypeScript 5.9
-- API: Express 5
+- Frontend: React + Vite (port 21752, path `/`)
+- API: Express 5 (path `/api`)
 - DB: PostgreSQL + Drizzle ORM
 - Validation: Zod (`zod/v4`), `drizzle-zod`
 - API codegen: Orval (from OpenAPI spec)
-- Build: esbuild (CJS bundle)
+- UI: Monaco editor, custom ANSI terminal, recharts
+- Design: Neural Dark theme (void/plasma/synapse/signal/ember palette)
 
 ## Where things live
 
-_Populate as you build — short repo map plus pointers to the source-of-truth file for DB schema, API contracts, theme files, etc._
+- `lib/api-spec/openapi.yaml` — OpenAPI contract (source of truth for all endpoints)
+- `lib/db/src/schema/swarm.ts` — DB schema (swarm_sessions, swarm_agents, swarm_events)
+- `artifacts/aiverse/src/index.css` — Neural Dark CSS variables
+- `artifacts/aiverse/src/pages/` — dashboard.tsx, session.tsx
+- `artifacts/aiverse/src/components/swarm/` — SwarmLauncher, AgentCard, EventFeed, SwarmCodeEditor, SwarmTerminal
+- `artifacts/api-server/src/routes/swarm/` — REST endpoints
+- `artifacts/api-server/src/lib/swarm-engine.ts` — simulation engine (replaces real LLM calls)
 
 ## Architecture decisions
 
-_Populate as you build — non-obvious choices a reader couldn't infer from the code (3-5 bullets)._
+- **Simulation engine**: Real LLM calls replaced with a time-stepped simulator that writes events to the DB, so the UI streaming/polling works identically to production.
+- **SSE via polling**: Session view polls `GET /swarm/sessions/:id` every 1s while active instead of SSE, keeping the architecture stateless and compatible with the Replit proxy.
+- **OpenAPI-first**: All endpoints defined in `openapi.yaml` → Orval generates typed React Query hooks + Zod validators. Never write raw fetch calls.
+- **Decimal cost fields**: Drizzle uses `decimal` for cost/budget to avoid float precision issues; serialized as `parseFloat()` in routes.
+- **Neural Dark theme only**: App starts in dark mode; no light mode toggle (the design system is dark-only).
 
 ## Product
 
-_Describe the high-level user-facing capabilities of this app once they exist._
+- **Dashboard** — stats cards, 7-day activity chart, session list with status badges
+- **Swarm Launcher** — modal with title, objective, model selection, parallelism controls
+- **Session View** — live agent cards panel + tabbed Narration/Code/Terminal workspace
+- **Narration Feed** — real-time color-coded event stream showing every agent action
+- **Code Panel** — Monaco editor showing structured swarm output (plan, agent outputs, result)
+- **Terminal Panel** — ANSI-styled terminal log with ASCII art header and color-coded events
 
 ## User preferences
 
@@ -38,7 +55,10 @@ _Populate as you build — explicit user instructions worth remembering across s
 
 ## Gotchas
 
-_Populate as you build — sharp edges, "always run X before Y" rules._
+- Do NOT change `info.title` in `openapi.yaml` (controls generated filenames — must stay "Api")
+- After any schema change: run `pnpm --filter @workspace/db run push` then `pnpm run typecheck:libs`
+- After any `openapi.yaml` change: run `pnpm --filter @workspace/api-spec run codegen`
+- Query param schemas with same name across endpoints cause TS2308 collision in `api-zod` — use unique `operationId` values or remove shared query params
 
 ## Pointers
 

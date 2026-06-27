@@ -3,13 +3,22 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: AIVerse 2.0 - AI Agent Swarm Platform API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: auth
+    description: Authentication operations
+  - name: swarm
+    description: Swarm session operations
+  - name: agents
+    description: Swarm agent operations
+  - name: events
+    description: Swarm event operations
+
 paths:
   /healthz:
     get:
@@ -24,6 +33,214 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /swarm/sessions:
+    get:
+      operationId: listSwarmSessions
+      tags: [swarm]
+      summary: List swarm sessions
+      responses:
+        "200":
+          description: List of swarm sessions
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SwarmSessionList"
+    post:
+      operationId: createSwarmSession
+      tags: [swarm]
+      summary: Create and start a new swarm session
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SwarmSessionInput"
+      responses:
+        "201":
+          description: Created session
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SwarmSession"
+
+  /swarm/sessions/{id}:
+    get:
+      operationId: getSwarmSession
+      tags: [swarm]
+      summary: Get a swarm session with agents and recent events
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Session detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SwarmSessionDetail"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+    delete:
+      operationId: deleteSwarmSession
+      tags: [swarm]
+      summary: Delete a swarm session
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeleteResult"
+
+  /swarm/sessions/{id}/pause:
+    post:
+      operationId: pauseSwarmSession
+      tags: [swarm]
+      summary: Pause all running agents in a session
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Paused
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SwarmSession"
+
+  /swarm/sessions/{id}/resume:
+    post:
+      operationId: resumeSwarmSession
+      tags: [swarm]
+      summary: Resume a paused session
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Resumed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SwarmSession"
+
+  /swarm/sessions/{id}/cancel:
+    post:
+      operationId: cancelSwarmSession
+      tags: [swarm]
+      summary: Cancel a session
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Cancelled
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SwarmSession"
+
+  /swarm/sessions/{id}/approve:
+    post:
+      operationId: approveSwarmCheckpoint
+      tags: [swarm]
+      summary: Approve a human checkpoint
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CheckpointDecision"
+      responses:
+        "200":
+          description: Decision recorded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SwarmSession"
+
+  /swarm/sessions/{id}/agents:
+    get:
+      operationId: listSwarmAgents
+      tags: [agents]
+      summary: List agents in a session
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Agents list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SwarmAgent"
+
+  /swarm/sessions/{id}/events:
+    get:
+      operationId: getSessionEvents
+      tags: [events]
+      summary: Event log for a session
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Events list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SwarmEventList"
+
+  /swarm/analytics:
+    get:
+      operationId: getSwarmAnalytics
+      tags: [swarm]
+      summary: Aggregated swarm analytics for current user
+      responses:
+        "200":
+          description: Analytics data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SwarmAnalytics"
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +251,303 @@ components:
       required:
         - status
 
+    ApiError:
+      type: object
+      properties:
+        error:
+          type: string
+        code:
+          type: string
+      required:
+        - error
+
+    DeleteResult:
+      type: object
+      properties:
+        success:
+          type: boolean
+      required:
+        - success
+
+    SwarmSessionInput:
+      type: object
+      required:
+        - title
+        - objective
+      properties:
+        title:
+          type: string
+        objective:
+          type: string
+        orchestratorModel:
+          type: string
+          default: claude-sonnet
+        workerModels:
+          type: array
+          items:
+            type: string
+          default: [gpt-4o, claude-haiku, gemini-flash]
+        maxParallelAgents:
+          type: integer
+          default: 4
+        maxStepsPerAgent:
+          type: integer
+          default: 10
+        toolsAllowed:
+          type: array
+          items:
+            type: string
+          default: [web_search, code_execute, read_url, memory, file_write]
+        humanCheckpoints:
+          type: boolean
+          default: false
+        budgetCapUsd:
+          type: ["number", "null"]
+
+    SwarmSession:
+      type: object
+      required:
+        - id
+        - title
+        - status
+        - objective
+        - totalTokens
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          type: string
+        userId:
+          type: string
+        title:
+          type: string
+        status:
+          type: string
+          enum: [PENDING, PLANNING, RUNNING, PAUSED, COMPLETED, FAILED, CANCELLED]
+        objective:
+          type: string
+        planJson:
+          type: ["object", "null"]
+        resultJson:
+          type: ["object", "null"]
+        totalTokens:
+          type: integer
+        totalCostUsd:
+          type: number
+        orchestratorModel:
+          type: string
+        workerModels:
+          type: array
+          items:
+            type: string
+        maxParallelAgents:
+          type: integer
+        maxStepsPerAgent:
+          type: integer
+        toolsAllowed:
+          type: array
+          items:
+            type: string
+        humanCheckpoints:
+          type: boolean
+        budgetCapUsd:
+          type: ["number", "null"]
+        startedAt:
+          type: ["string", "null"]
+          format: date-time
+        completedAt:
+          type: ["string", "null"]
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    SwarmSessionDetail:
+      allOf:
+        - $ref: "#/components/schemas/SwarmSession"
+        - type: object
+          properties:
+            agents:
+              type: array
+              items:
+                $ref: "#/components/schemas/SwarmAgent"
+            recentEvents:
+              type: array
+              items:
+                $ref: "#/components/schemas/SwarmEvent"
+
+    SwarmSessionList:
+      type: object
+      required:
+        - sessions
+        - total
+      properties:
+        sessions:
+          type: array
+          items:
+            $ref: "#/components/schemas/SwarmSession"
+        total:
+          type: integer
+        nextCursor:
+          type: ["string", "null"]
+
+    SwarmAgent:
+      type: object
+      required:
+        - id
+        - sessionId
+        - name
+        - role
+        - model
+        - status
+        - createdAt
+      properties:
+        id:
+          type: string
+        sessionId:
+          type: string
+        name:
+          type: string
+        role:
+          type: string
+          enum: [ORCHESTRATOR, RESEARCHER, EXECUTOR, CRITIC, SYNTHESIZER, TOOL_CALLER]
+        model:
+          type: string
+        status:
+          type: string
+          enum: [IDLE, THINKING, EXECUTING, WAITING, COMPLETED, FAILED]
+        currentTask:
+          type: ["string", "null"]
+        outputJson:
+          type: ["object", "null"]
+        tokensUsed:
+          type: integer
+        startedAt:
+          type: ["string", "null"]
+          format: date-time
+        completedAt:
+          type: ["string", "null"]
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+
+    SwarmEvent:
+      type: object
+      required:
+        - id
+        - sessionId
+        - type
+        - payload
+        - timestamp
+      properties:
+        id:
+          type: string
+        sessionId:
+          type: string
+        agentId:
+          type: ["string", "null"]
+        agentName:
+          type: ["string", "null"]
+        agentRole:
+          type: ["string", "null"]
+        type:
+          type: string
+          enum:
+            - SWARM_STARTED
+            - SWARM_COMPLETED
+            - SWARM_FAILED
+            - AGENT_SPAWNED
+            - AGENT_THINKING
+            - AGENT_EXECUTING
+            - AGENT_COMPLETED
+            - AGENT_FAILED
+            - TOOL_CALLED
+            - TOOL_RESULT
+            - TOOL_FAILED
+            - MESSAGE_SENT
+            - MESSAGE_RECEIVED
+            - PLAN_CREATED
+            - PLAN_STEP_STARTED
+            - PLAN_STEP_COMPLETED
+            - HUMAN_CHECKPOINT
+            - HUMAN_APPROVED
+            - HUMAN_REJECTED
+            - MEMORY_STORED
+            - MEMORY_RETRIEVED
+        payload:
+          type: object
+        timestamp:
+          type: string
+          format: date-time
+
+    SwarmEventList:
+      type: object
+      required:
+        - events
+      properties:
+        events:
+          type: array
+          items:
+            $ref: "#/components/schemas/SwarmEvent"
+        nextCursor:
+          type: ["string", "null"]
+
+    CheckpointDecision:
+      type: object
+      required:
+        - approved
+      properties:
+        approved:
+          type: boolean
+        feedback:
+          type: ["string", "null"]
+
+    SwarmAnalytics:
+      type: object
+      required:
+        - totalSessions
+        - completedSessions
+        - failedSessions
+        - runningSessions
+        - successRate
+        - totalTokensUsed
+        - totalCostUsd
+        - avgDurationMs
+        - sessionsThisMonth
+        - costThisMonth
+        - sessionsLast7Days
+      properties:
+        totalSessions:
+          type: integer
+        completedSessions:
+          type: integer
+        failedSessions:
+          type: integer
+        runningSessions:
+          type: integer
+        successRate:
+          type: number
+        totalTokensUsed:
+          type: integer
+        totalCostUsd:
+          type: number
+        avgDurationMs:
+          type: number
+        sessionsThisMonth:
+          type: integer
+        costThisMonth:
+          type: number
+        sessionsLast7Days:
+          type: array
+          items:
+            type: object
+            required: [date, count]
+            properties:
+              date:
+                type: string
+              count:
+                type: integer
