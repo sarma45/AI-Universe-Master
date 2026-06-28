@@ -76,7 +76,7 @@ router.post("/swarm/sessions", async (req, res): Promise<void> => {
     })
     .returning();
 
-  simulateSwarm(id, data.objective).catch(() => {});
+  simulateSwarm(id, data.objective, data.orchestratorModel ?? undefined).catch(() => {});
 
   res.status(201).json(CreateSwarmSessionResponse.parse(serializeSession(session)));
 });
