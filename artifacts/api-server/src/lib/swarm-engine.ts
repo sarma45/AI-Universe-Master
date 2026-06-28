@@ -70,12 +70,12 @@ function sanitizeRole(raw: string): ValidRole {
 }
 
 const ROLE_MODELS: Record<string, ModelId> = {
-  ORCHESTRATOR: "kimi-k2.6",
+  ORCHESTRATOR: "llama-4-maverick",
   RESEARCHER: "llama-4-maverick",
   EXECUTOR: "deepseek-v4-flash",
-  SYNTHESIZER: "deepseek-v4-pro",
+  SYNTHESIZER: "llama-4-maverick",
   TOOL_CALLER: "deepseek-v4-flash",
-  CRITIC: "llama-3.3-70b",
+  CRITIC: "deepseek-v4-flash",
 };
 
 async function createPlan(objective: string, orchestratorModel: ModelId): Promise<SwarmPlan> {
@@ -92,17 +92,16 @@ Output ONLY valid JSON with this exact structure (no markdown, no explanation):
       "title": "Step title",
       "task": "Detailed description of exactly what this agent should do and produce",
       "agent_role": "RESEARCHER",
-      "depends_on": [],
-      "model": "llama-4-maverick"
+      "depends_on": []
     }
   ]
 }
 Rules:
-- agent_role must be one of: RESEARCHER, EXECUTOR, ANALYST, CRITIC, ORCHESTRATOR
-- depends_on contains step IDs this step must wait for
-- 3-6 steps total, keep it practical
-- model suggestions: kimi-k2.6 (complex reasoning), deepseek-v4-pro (analysis), llama-4-maverick (research), deepseek-v4-flash (fast tasks), llama-3.3-70b (review)
-- Make steps concrete and actionable for an AI agent`,
+- agent_role MUST be one of EXACTLY these values: RESEARCHER, EXECUTOR, SYNTHESIZER, CRITIC
+- depends_on contains step IDs this step must wait for (empty array if no dependencies)
+- 3-5 steps total — keep it lean and practical
+- Make tasks concrete and actionable
+- Do NOT include a "model" field`,
     },
     {
       role: "user",
@@ -120,9 +119,9 @@ Rules:
       plan_title: objective.slice(0, 60),
       steps: [
         { id: "step_1", title: "Research", task: `Research and gather information about: ${objective}`, agent_role: "RESEARCHER" as const, depends_on: [], model: "llama-4-maverick" },
-        { id: "step_2", title: "Synthesis", task: `Analyze the research findings and extract key insights about: ${objective}`, agent_role: "SYNTHESIZER" as const, depends_on: ["step_1"], model: "deepseek-v4-pro" },
+        { id: "step_2", title: "Synthesis", task: `Analyze the research findings and extract key insights about: ${objective}`, agent_role: "SYNTHESIZER" as const, depends_on: ["step_1"], model: "llama-4-maverick" },
         { id: "step_3", title: "Execution", task: `Execute and produce the final output based on analysis for: ${objective}`, agent_role: "EXECUTOR" as const, depends_on: ["step_2"], model: "deepseek-v4-flash" },
-        { id: "step_4", title: "Review", task: `Review and critique the output for quality and completeness regarding: ${objective}`, agent_role: "CRITIC" as const, depends_on: ["step_3"], model: "llama-3.3-70b" },
+        { id: "step_4", title: "Review", task: `Review and critique the output for quality and completeness regarding: ${objective}`, agent_role: "CRITIC" as const, depends_on: ["step_3"], model: "deepseek-v4-flash" },
       ],
     };
   }
@@ -135,7 +134,8 @@ async function runAgent(
   agentRole: string,
   modelId: ModelId,
   task: string,
-  priorContext: string
+  priorContext: string,
+  maxTokens = 2048
 ): Promise<{ summary: string; output: string; tokensUsed: number }> {
   const modelLabel = MODEL_CONFIGS[modelId]?.label ?? modelId;
   const systemPrompt = `You are a ${agentRole} agent in an AI swarm (model: ${modelLabel}).
@@ -152,9 +152,13 @@ Be thorough, specific, and produce actionable output. When done, provide a clear
   ];
 
   let totalTokens = 0;
-  const MAX_ITERATIONS = 8;
+  const MAX_ITERATIONS = 4;
+  const AGENT_DEADLINE = Date.now() + 120_000;
 
   for (let iteration = 0; iteration < MAX_ITERATIONS; iteration++) {
+    if (Date.now() > AGENT_DEADLINE) {
+      return { summary: "Agent timed out after 2 minutes.", output: "Agent wall-clock limit reached.", tokensUsed: totalTokens };
+    }
     await insertEvent(
       sessionId,
       "AGENT_THINKING",
@@ -166,7 +170,7 @@ Be thorough, specific, and produce actionable output. When done, provide a clear
 
     const completion = await chatCompletion(modelId, messages, {
       tools: TOOL_DEFINITIONS,
-      maxTokens: 4096,
+      maxTokens,
     });
 
     const choice = completion.choices[0];
@@ -358,7 +362,8 @@ export async function simulateSwarm(sessionId: string, objective: string, rawOrc
             role,
             modelId,
             step.task,
-            priorContext
+            priorContext,
+            2048
           );
 
           stepOutputs[step.id] = output;
