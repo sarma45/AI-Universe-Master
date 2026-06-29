@@ -12,6 +12,7 @@ import AgentsPage from "@/pages/agents";
 import WorkspacePage from "@/pages/workspace";
 import BillingPage from "@/pages/billing";
 import SettingsPage from "@/pages/settings";
+import AuthCallback from "@/pages/auth-callback";
 import { AppSidebar } from "@/components/layout/AppSidebar";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -64,6 +65,7 @@ function Router() {
       {/* Public routes — no sidebar */}
       <Route path="/login" component={LoginPage} />
       <Route path="/register" component={RegisterPage} />
+      <Route path="/auth/callback" component={AuthCallback} />
 
       {/* Root: landing if not authed, dashboard if authed */}
       <Route path="/">
