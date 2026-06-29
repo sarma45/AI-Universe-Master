@@ -3,10 +3,10 @@ import { logger } from "../lib/logger.js";
 
 const router: IRouter = Router();
 
-const OPENROUTER_API_KEY = process.env["OPENAI_API_KEY"] ?? "";
 const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
 
 router.post("/ai/chat", async (req, res): Promise<void> => {
+  const OPENROUTER_API_KEY = process.env["OPENAI_API_KEY"] ?? "";
   const {
     messages = [],
     model = "moonshotai/kimi-k2:free",
