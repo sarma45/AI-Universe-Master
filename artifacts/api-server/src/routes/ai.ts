@@ -3,7 +3,7 @@ import { logger } from "../lib/logger.js";
 
 const router: IRouter = Router();
 
-const OPENROUTER_API_KEY = process.env["OPENROUTER_API_KEY"] ?? "";
+const OPENROUTER_API_KEY = process.env["OPENAI_API_KEY"] ?? "";
 const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
 
 router.post("/ai/chat", async (req, res): Promise<void> => {
@@ -18,7 +18,7 @@ router.post("/ai/chat", async (req, res): Promise<void> => {
   };
 
   if (!OPENROUTER_API_KEY) {
-    res.status(503).json({ error: "AI service not configured — set OPENROUTER_API_KEY" });
+    res.status(503).json({ error: "AI service not configured — set OPENAI_API_KEY" });
     return;
   }
 
