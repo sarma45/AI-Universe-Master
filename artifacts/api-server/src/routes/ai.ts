@@ -1,15 +1,21 @@
 import { Router, type IRouter } from "express";
+import OpenAI from "openai";
 import { logger } from "../lib/logger.js";
 
 const router: IRouter = Router();
 
-const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
+const NVIDIA_BASE_URL = "https://integrate.api.nvidia.com/v1";
+
+function getNvidiaKey(): string {
+  const key = process.env["NVIDIA_API_KEY_1"] ?? process.env["NVIDIA_API_KEY"];
+  if (!key) throw new Error("No NVIDIA API key configured");
+  return key;
+}
 
 router.post("/ai/chat", async (req, res): Promise<void> => {
-  const OPENROUTER_API_KEY = process.env["OPENAI_API_KEY"] ?? "";
   const {
     messages = [],
-    model = "moonshotai/kimi-k2:free",
+    model = "kimi-k2.6",
     systemPrompt,
   } = req.body as {
     messages?: { role: string; content: string }[];
@@ -17,57 +23,53 @@ router.post("/ai/chat", async (req, res): Promise<void> => {
     systemPrompt?: string;
   };
 
-  if (!OPENROUTER_API_KEY) {
-    res.status(503).json({ error: "AI service not configured — set OPENAI_API_KEY" });
-    return;
-  }
+  const MODEL_MAP: Record<string, string> = {
+    "kimi-k2.6": "moonshotai/kimi-k2.6",
+    "deepseek-v4-pro": "deepseek-ai/deepseek-v4-pro",
+    "deepseek-v4-flash": "deepseek-ai/deepseek-v4-flash",
+    "llama-4-maverick": "meta/llama-4-maverick-17b-128e-instruct",
+    "llama-3.3-70b": "meta/llama-3.3-70b-instruct",
+  };
 
-  const systemMsg = systemPrompt
-    ? [{ role: "system", content: systemPrompt }]
-    : [{ role: "system", content: "You are AIVerse, an advanced AI assistant. Be concise, helpful, and technically precise." }];
+  const resolvedModel = MODEL_MAP[model] ?? MODEL_MAP["kimi-k2.6"];
 
   try {
-    const upstream = await fetch(OPENROUTER_URL, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${OPENROUTER_API_KEY}`,
-        "HTTP-Referer": "https://aiverse.replit.app",
-        "X-Title": "AIVerse 2.0",
-      },
-      body: JSON.stringify({
-        model,
-        messages: [...systemMsg, ...messages],
-        stream: true,
-      }),
-    });
+    const apiKey = getNvidiaKey();
+    const client = new OpenAI({ baseURL: NVIDIA_BASE_URL, apiKey, timeout: 60_000 });
 
-    if (!upstream.ok) {
-      const err = await upstream.text();
-      logger.error({ err }, "OpenRouter error");
-      res.status(upstream.status).json({ error: err });
-      return;
-    }
+    const systemMsg = systemPrompt
+      ? [{ role: "system" as const, content: systemPrompt }]
+      : [{ role: "system" as const, content: "You are AIVerse, an advanced AI assistant. Be concise, helpful, and technically precise." }];
+
+    const allMessages = [
+      ...systemMsg,
+      ...messages.map(m => ({ role: m.role as "user" | "assistant" | "system", content: m.content })),
+    ];
 
     res.setHeader("Content-Type", "text/event-stream");
     res.setHeader("Cache-Control", "no-cache");
     res.setHeader("Connection", "keep-alive");
 
-    const reader = upstream.body!.getReader();
-    const decoder = new TextDecoder();
+    const stream = await client.chat.completions.create({
+      model: resolvedModel,
+      messages: allMessages,
+      max_tokens: 2048,
+      stream: true,
+    });
 
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      const chunk = decoder.decode(value);
-      res.write(chunk);
+    for await (const chunk of stream) {
+      const content = chunk.choices[0]?.delta?.content;
+      if (content) {
+        res.write(`data: ${JSON.stringify({ choices: [{ delta: { content } }] })}\n\n`);
+      }
     }
 
+    res.write("data: [DONE]\n\n");
     res.end();
   } catch (err) {
     logger.error({ err }, "AI chat error");
     if (!res.headersSent) {
-      res.status(500).json({ error: "AI service error" });
+      res.status(500).json({ error: err instanceof Error ? err.message : "AI service error" });
     }
   }
 });
