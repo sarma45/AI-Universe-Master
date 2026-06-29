@@ -1,1 +1,2 @@
 - [Real swarm engine](real-swarm-engine.md) — production swarm uses NVIDIA NIM (kimi-k2.6, deepseek-v4-pro/flash, llama-4-maverick) + sanitizeRole() guards against LLM returning invalid DB enum values
+- [AIVerse auth integration](aiverse-auth.md) — JWT auth added to existing Vite+Express stack; users/user_agents tables in Drizzle; bcryptjs + jsonwebtoken on api-server

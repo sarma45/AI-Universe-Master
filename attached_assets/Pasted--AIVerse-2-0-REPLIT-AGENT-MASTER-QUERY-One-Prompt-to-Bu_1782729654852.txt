@@ -1,0 +1,1119 @@
+# AIVerse 2.0 — REPLIT AGENT MASTER QUERY
+### One Prompt to Build the Complete Architecture & Push to GitHub
+
+---
+
+> **PASTE THIS ENTIRE DOCUMENT AS A SINGLE PROMPT INTO REPLIT AGENT.**
+> Replit Agent will scaffold, implement, and commit the full AIVerse 2.0 platform autonomously.
+
+---
+
+## AGENT DIRECTIVE
+
+You are building **AIVerse 2.0** — an enterprise-grade AI SaaS platform. Your job is to scaffold and implement the complete codebase from scratch, then push it to GitHub. Follow every instruction below precisely. Do not skip any section. Do not ask for confirmation — execute everything autonomously.
+
+When the build is complete, run `git push` to the GitHub remote specified at the end of this document.
+
+---
+
+## SECTION 1 — PROJECT IDENTITY
+
+| Field | Value |
+|---|---|
+| Project Name | AIVerse 2.0 |
+| Type | Enterprise AI SaaS Platform |
+| Target Users | Developers, enterprises, AI teams |
+| Core Value | Discover, deploy, and monetize AI agents from a unified platform |
+| GitHub Repo | `https://github.com/sarma45/Application` |
+| Vercel Deployment | `application-rosy-one.vercel.app` |
+| Brand Colors | Background: `#000000` (void black), Primary: `#00FFFF` (cyan), Accent: `#8B5CF6` (violet) |
+| Typography | Inter (UI), JetBrains Mono (code/terminal) |
+
+---
+
+## SECTION 2 — TECH STACK (USE EXACT VERSIONS)
+
+```
+Framework:        Next.js 15 (App Router, Server Components, Server Actions)
+Language:         TypeScript (strict mode — tsconfig strict: true)
+Styling:          Tailwind CSS v4 + shadcn/ui
+ORM:              Prisma 7
+Database:         Neon PostgreSQL (pgvector extension enabled)
+Cache/Queue:      Upstash Redis (REST SDK)
+Auth:             NextAuth.js v5 (Auth.js)
+Payments:         Stripe + Razorpay (dual gateway)
+AI SDK:           Vercel AI SDK (streamText, generateText, useChat)
+AI Provider:      OpenRouter — model: moonshotai/kimi-k2:free
+Background Jobs:  Inngest (event-driven, cron jobs)
+Storage:          AWS S3 (via @aws-sdk/client-s3)
+Error Tracking:   Sentry (@sentry/nextjs)
+3D UI:            React Three Fiber + Drei
+Animations:       GSAP + Framer Motion
+Code Editor:      Monaco Editor (@monaco-editor/react)
+Terminal:         xterm.js
+Real-time:        Server-Sent Events (SSE) via Next.js Route Handlers
+Password Hashing: bcryptjs (NOT bcrypt — Linux runtime compatibility)
+```
+
+**Install all packages listed above. Use `--legacy-peer-deps` if peer conflicts arise.**
+
+---
+
+## SECTION 3 — ENVIRONMENT VARIABLES
+
+Create `.env.local` with these keys (leave values as placeholders — do NOT commit real secrets):
+
+```env
+# Database
+DATABASE_URL=postgresql://user:password@host/aiverse?sslmode=require
+DIRECT_URL=postgresql://user:password@host/aiverse?sslmode=require
+
+# Auth
+NEXTAUTH_SECRET=your-nextauth-secret-here
+NEXTAUTH_URL=http://localhost:3000
+
+# OpenRouter / AI
+OPENROUTER_API_KEY=your-openrouter-key-here
+
+# Stripe
+STRIPE_SECRET_KEY=sk_test_placeholder
+STRIPE_PUBLISHABLE_KEY=pk_test_placeholder
+STRIPE_WEBHOOK_SECRET=whsec_placeholder
+
+# Razorpay
+RAZORPAY_KEY_ID=rzp_test_placeholder
+RAZORPAY_KEY_SECRET=rzp_secret_placeholder
+
+# Upstash Redis
+UPSTASH_REDIS_REST_URL=https://your-upstash-url.upstash.io
+UPSTASH_REDIS_REST_TOKEN=your-upstash-token
+
+# AWS S3
+AWS_ACCESS_KEY_ID=placeholder
+AWS_SECRET_ACCESS_KEY=placeholder
+AWS_REGION=ap-south-1
+AWS_S3_BUCKET=aiverse-uploads
+
+# Inngest
+INNGEST_SIGNING_KEY=your-inngest-signing-key
+INNGEST_EVENT_KEY=your-inngest-event-key
+
+# Sentry
+SENTRY_DSN=https://your-sentry-dsn@sentry.io/project
+
+# App
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+```
+
+Add `.env.local` to `.gitignore`. Create `.env.example` with all keys but empty values for GitHub.
+
+---
+
+## SECTION 4 — COMPLETE FOLDER STRUCTURE
+
+Scaffold exactly this directory tree:
+
+```
+aiverse-2.0/
+├── app/
+│   ├── (auth)/
+│   │   ├── login/page.tsx
+│   │   ├── register/page.tsx
+│   │   └── layout.tsx
+│   ├── (dashboard)/
+│   │   ├── dashboard/page.tsx
+│   │   ├── agents/
+│   │   │   ├── page.tsx
+│   │   │   └── [agentId]/page.tsx
+│   │   ├── workspace/
+│   │   │   └── page.tsx
+│   │   ├── billing/page.tsx
+│   │   ├── settings/page.tsx
+│   │   └── layout.tsx
+│   ├── (marketing)/
+│   │   ├── page.tsx          ← Landing page
+│   │   ├── pricing/page.tsx
+│   │   └── layout.tsx
+│   ├── api/
+│   │   ├── auth/
+│   │   │   └── [...nextauth]/route.ts
+│   │   ├── ai/
+│   │   │   ├── chat/route.ts
+│   │   │   ├── stream/route.ts
+│   │   │   └── agents/route.ts
+│   │   ├── agents/
+│   │   │   ├── route.ts
+│   │   │   └── [agentId]/route.ts
+│   │   ├── payments/
+│   │   │   ├── stripe/
+│   │   │   │   ├── checkout/route.ts
+│   │   │   │   └── webhook/route.ts
+│   │   │   └── razorpay/
+│   │   │       ├── create-order/route.ts
+│   │   │       └── webhook/route.ts
+│   │   ├── inngest/route.ts
+│   │   └── health/route.ts
+│   ├── globals.css
+│   └── layout.tsx            ← Root layout
+├── components/
+│   ├── ui/                   ← shadcn/ui components
+│   ├── auth/
+│   │   ├── LoginForm.tsx
+│   │   └── RegisterForm.tsx
+│   ├── dashboard/
+│   │   ├── Sidebar.tsx
+│   │   ├── TopNav.tsx
+│   │   └── StatsCard.tsx
+│   ├── workspace/
+│   │   ├── AIWorkspace.tsx   ← 4-panel IDE layout
+│   │   ├── AgentPanel.tsx
+│   │   ├── CodePanel.tsx
+│   │   ├── TerminalPanel.tsx
+│   │   └── ChatPanel.tsx
+│   ├── agents/
+│   │   ├── AgentCard.tsx
+│   │   ├── AgentBuilder.tsx
+│   │   └── AgentSwarm.tsx
+│   ├── billing/
+│   │   ├── PricingCard.tsx
+│   │   ├── StripeCheckout.tsx
+│   │   └── RazorpayCheckout.tsx
+│   ├── landing/
+│   │   ├── Hero.tsx
+│   │   ├── Features.tsx
+│   │   ├── Pricing.tsx
+│   │   └── Footer.tsx
+│   └── shared/
+│       ├── ThemeProvider.tsx
+│       ├── LoadingSpinner.tsx
+│       └── ErrorBoundary.tsx
+├── lib/
+│   ├── auth.ts               ← NextAuth v5 config
+│   ├── db.ts                 ← Prisma client singleton
+│   ├── redis.ts              ← Upstash Redis client
+│   ├── ai.ts                 ← OpenRouter / AI SDK config
+│   ├── s3.ts                 ← AWS S3 client
+│   ├── stripe.ts             ← Stripe client
+│   ├── razorpay.ts           ← Razorpay client
+│   ├── inngest.ts            ← Inngest client
+│   └── utils.ts              ← cn(), formatters, helpers
+├── inngest/
+│   ├── client.ts
+│   ├── functions/
+│   │   ├── agentExecution.ts
+│   │   ├── billingSync.ts
+│   │   └── usageTracking.ts
+│   └── index.ts
+├── prisma/
+│   ├── schema.prisma
+│   └── migrations/
+├── hooks/
+│   ├── useAgent.ts
+│   ├── useChat.ts
+│   ├── useSubscription.ts
+│   └── useWorkspace.ts
+├── types/
+│   ├── agent.ts
+│   ├── auth.ts
+│   ├── billing.ts
+│   └── index.ts
+├── middleware.ts
+├── next.config.ts
+├── tailwind.config.ts
+├── tsconfig.json
+├── .gitignore
+├── .env.example
+└── package.json
+```
+
+---
+
+## SECTION 5 — PRISMA SCHEMA
+
+Write this complete schema to `prisma/schema.prisma`:
+
+```prisma
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
+}
+
+datasource db {
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  directUrl  = env("DIRECT_URL")
+  extensions = [pgvector(map: "vector")]
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  image         String?
+  password      String?
+  role          Role      @default(USER)
+  plan          Plan      @default(FREE)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  accounts      Account[]
+  sessions      Session[]
+  agents        Agent[]
+  subscriptions Subscription[]
+  usageLogs     UsageLog[]
+  workspaces    Workspace[]
+
+  @@map("users")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model Agent {
+  id          String      @id @default(cuid())
+  name        String
+  description String?
+  prompt      String      @db.Text
+  model       String      @default("moonshotai/kimi-k2:free")
+  isPublic    Boolean     @default(false)
+  isActive    Boolean     @default(true)
+  config      Json        @default("{}")
+  userId      String
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  executions   AgentExecution[]
+  memories     AgentMemory[]
+
+  @@map("agents")
+}
+
+model AgentExecution {
+  id        String          @id @default(cuid())
+  agentId   String
+  input     String          @db.Text
+  output    String?         @db.Text
+  status    ExecutionStatus @default(PENDING)
+  tokens    Int             @default(0)
+  cost      Float           @default(0)
+  duration  Int?
+  metadata  Json            @default("{}")
+  createdAt DateTime        @default(now())
+
+  agent Agent @relation(fields: [agentId], references: [id], onDelete: Cascade)
+
+  @@map("agent_executions")
+}
+
+model AgentMemory {
+  id        String                    @id @default(cuid())
+  agentId   String
+  content   String                    @db.Text
+  embedding Unsupported("vector(1536)")?
+  metadata  Json                      @default("{}")
+  createdAt DateTime                  @default(now())
+
+  agent Agent @relation(fields: [agentId], references: [id], onDelete: Cascade)
+
+  @@map("agent_memories")
+}
+
+model Workspace {
+  id        String   @id @default(cuid())
+  name      String
+  userId    String
+  config    Json     @default("{}")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("workspaces")
+}
+
+model Subscription {
+  id                   String             @id @default(cuid())
+  userId               String
+  plan                 Plan
+  status               SubscriptionStatus
+  gateway              PaymentGateway
+  stripeSubscriptionId String?            @unique
+  razorpaySubId        String?            @unique
+  currentPeriodStart   DateTime
+  currentPeriodEnd     DateTime
+  cancelAtPeriodEnd    Boolean            @default(false)
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("subscriptions")
+}
+
+model UsageLog {
+  id        String   @id @default(cuid())
+  userId    String
+  agentId   String?
+  action    String
+  tokens    Int      @default(0)
+  cost      Float    @default(0)
+  metadata  Json     @default("{}")
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("usage_logs")
+}
+
+enum Role {
+  USER
+  ADMIN
+  SUPER_ADMIN
+}
+
+enum Plan {
+  FREE
+  PRO
+  ENTERPRISE
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  CANCELED
+  PAST_DUE
+  TRIALING
+  INCOMPLETE
+}
+
+enum PaymentGateway {
+  STRIPE
+  RAZORPAY
+}
+
+enum ExecutionStatus {
+  PENDING
+  RUNNING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+```
+
+---
+
+## SECTION 6 — CORE LIBRARY FILES
+
+### `lib/db.ts` — Prisma Singleton
+```typescript
+import { PrismaClient } from "@prisma/client";
+
+const globalForPrisma = globalThis as unknown as {
+  prisma: PrismaClient | undefined;
+};
+
+export const db =
+  globalForPrisma.prisma ??
+  new PrismaClient({
+    log: process.env.NODE_ENV === "development" ? ["query", "error", "warn"] : ["error"],
+  });
+
+if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = db;
+```
+
+### `lib/auth.ts` — NextAuth v5
+```typescript
+import NextAuth from "next-auth";
+import { PrismaAdapter } from "@auth/prisma-adapter";
+import CredentialsProvider from "next-auth/providers/credentials";
+import GoogleProvider from "next-auth/providers/google";
+import { db } from "@/lib/db";
+import bcrypt from "bcryptjs";
+
+export const { handlers, signIn, signOut, auth } = NextAuth({
+  adapter: PrismaAdapter(db),
+  session: { strategy: "jwt" },
+  pages: {
+    signIn: "/login",
+    error: "/login",
+  },
+  providers: [
+    GoogleProvider({
+      clientId: process.env.GOOGLE_CLIENT_ID!,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+    }),
+    CredentialsProvider({
+      name: "credentials",
+      credentials: {
+        email: { label: "Email", type: "email" },
+        password: { label: "Password", type: "password" },
+      },
+      async authorize(credentials) {
+        if (!credentials?.email || !credentials?.password) return null;
+        const user = await db.user.findUnique({
+          where: { email: credentials.email as string },
+        });
+        if (!user || !user.password) return null;
+        const isValid = await bcrypt.compare(
+          credentials.password as string,
+          user.password
+        );
+        if (!isValid) return null;
+        return user;
+      },
+    }),
+  ],
+  callbacks: {
+    async jwt({ token, user }) {
+      if (user) {
+        token.id = user.id;
+        token.role = (user as any).role;
+        token.plan = (user as any).plan;
+      }
+      return token;
+    },
+    async session({ session, token }) {
+      if (token) {
+        session.user.id = token.id as string;
+        (session.user as any).role = token.role;
+        (session.user as any).plan = token.plan;
+      }
+      return session;
+    },
+  },
+});
+```
+
+### `lib/ai.ts` — OpenRouter + Vercel AI SDK
+```typescript
+import { createOpenAI } from "@ai-sdk/openai";
+
+export const openrouter = createOpenAI({
+  baseURL: "https://openrouter.ai/api/v1",
+  apiKey: process.env.OPENROUTER_API_KEY!,
+});
+
+export const defaultModel = openrouter("moonshotai/kimi-k2:free");
+```
+
+### `lib/redis.ts` — Upstash Redis
+```typescript
+import { Redis } from "@upstash/redis";
+
+export const redis = new Redis({
+  url: process.env.UPSTASH_REDIS_REST_URL!,
+  token: process.env.UPSTASH_REDIS_REST_TOKEN!,
+});
+```
+
+### `lib/stripe.ts`
+```typescript
+import Stripe from "stripe";
+
+export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+  apiVersion: "2024-12-18.acacia",
+  typescript: true,
+});
+```
+
+### `lib/razorpay.ts`
+```typescript
+import Razorpay from "razorpay";
+
+export const razorpay = new Razorpay({
+  key_id: process.env.RAZORPAY_KEY_ID!,
+  key_secret: process.env.RAZORPAY_KEY_SECRET!,
+});
+```
+
+### `lib/utils.ts`
+```typescript
+import { type ClassValue, clsx } from "clsx";
+import { twMerge } from "tailwind-merge";
+
+export function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs));
+}
+
+export function formatCurrency(amount: number, currency = "USD"): string {
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency,
+  }).format(amount / 100);
+}
+
+export function formatDate(date: Date | string): string {
+  return new Intl.DateTimeFormat("en-US", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  }).format(new Date(date));
+}
+```
+
+---
+
+## SECTION 7 — API ROUTES
+
+### `app/api/ai/chat/route.ts` — Streaming Chat
+```typescript
+import { streamText } from "ai";
+import { defaultModel } from "@/lib/ai";
+import { auth } from "@/lib/auth";
+
+export const maxDuration = 60;
+
+export async function POST(req: Request) {
+  const session = await auth();
+  if (!session?.user) {
+    return new Response("Unauthorized", { status: 401 });
+  }
+
+  const { messages, agentId } = await req.json();
+
+  const result = streamText({
+    model: defaultModel,
+    system:
+      "You are AIVerse, an advanced AI assistant. Be concise, helpful, and technically precise.",
+    messages,
+  });
+
+  return result.toDataStreamResponse();
+}
+```
+
+### `app/api/agents/route.ts` — CRUD Agents
+```typescript
+import { NextResponse } from "next/server";
+import { auth } from "@/lib/auth";
+import { db } from "@/lib/db";
+
+export async function GET() {
+  const session = await auth();
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const agents = await db.agent.findMany({
+    where: { userId: session.user.id },
+    orderBy: { createdAt: "desc" },
+  });
+
+  return NextResponse.json(agents);
+}
+
+export async function POST(req: Request) {
+  const session = await auth();
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const { name, description, prompt, model, isPublic } = await req.json();
+
+  const agent = await db.agent.create({
+    data: {
+      name,
+      description,
+      prompt,
+      model: model ?? "moonshotai/kimi-k2:free",
+      isPublic: isPublic ?? false,
+      userId: session.user.id,
+    },
+  });
+
+  return NextResponse.json(agent, { status: 201 });
+}
+```
+
+### `app/api/payments/stripe/checkout/route.ts`
+```typescript
+import { NextResponse } from "next/server";
+import { stripe } from "@/lib/stripe";
+import { auth } from "@/lib/auth";
+
+const PLANS = {
+  PRO: { priceId: "price_placeholder_pro", amount: 2900 },
+  ENTERPRISE: { priceId: "price_placeholder_enterprise", amount: 9900 },
+};
+
+export async function POST(req: Request) {
+  const session = await auth();
+  if (!session?.user?.email) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const { plan } = await req.json();
+  const planConfig = PLANS[plan as keyof typeof PLANS];
+  if (!planConfig) {
+    return NextResponse.json({ error: "Invalid plan" }, { status: 400 });
+  }
+
+  const checkoutSession = await stripe.checkout.sessions.create({
+    mode: "subscription",
+    customer_email: session.user.email,
+    line_items: [{ price: planConfig.priceId, quantity: 1 }],
+    success_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard?payment=success`,
+    cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/pricing?payment=cancelled`,
+    metadata: { userId: session.user.id!, plan },
+  });
+
+  return NextResponse.json({ url: checkoutSession.url });
+}
+```
+
+### `app/api/payments/razorpay/create-order/route.ts`
+```typescript
+import { NextResponse } from "next/server";
+import { razorpay } from "@/lib/razorpay";
+import { auth } from "@/lib/auth";
+
+const PLAN_AMOUNTS: Record<string, number> = {
+  PRO: 229900,       // ₹2,299 in paise
+  ENTERPRISE: 799900, // ₹7,999 in paise
+};
+
+export async function POST(req: Request) {
+  const session = await auth();
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const { plan } = await req.json();
+  const amount = PLAN_AMOUNTS[plan];
+  if (!amount) {
+    return NextResponse.json({ error: "Invalid plan" }, { status: 400 });
+  }
+
+  const order = await razorpay.orders.create({
+    amount,
+    currency: "INR",
+    receipt: `receipt_${session.user.id}_${Date.now()}`,
+    notes: { userId: session.user.id!, plan },
+  });
+
+  return NextResponse.json(order);
+}
+```
+
+### `app/api/inngest/route.ts`
+```typescript
+import { serve } from "inngest/next";
+import { inngest } from "@/inngest/client";
+import { agentExecutionFn, billingFn, usageFn } from "@/inngest";
+
+export const { GET, POST, PUT } = serve({
+  client: inngest,
+  functions: [agentExecutionFn, billingFn, usageFn],
+});
+```
+
+---
+
+## SECTION 8 — INNGEST BACKGROUND JOBS
+
+### `inngest/client.ts`
+```typescript
+import { Inngest } from "inngest";
+
+export const inngest = new Inngest({ id: "aiverse" });
+```
+
+### `inngest/functions/agentExecution.ts`
+```typescript
+import { inngest } from "../client";
+import { db } from "@/lib/db";
+import { generateText } from "ai";
+import { defaultModel } from "@/lib/ai";
+
+export const agentExecutionFn = inngest.createFunction(
+  { id: "agent-execution" },
+  { event: "agent/execute" },
+  async ({ event, step }) => {
+    const { agentId, input, executionId } = event.data;
+
+    await step.run("update-status-running", async () => {
+      await db.agentExecution.update({
+        where: { id: executionId },
+        data: { status: "RUNNING" },
+      });
+    });
+
+    const agent = await step.run("fetch-agent", async () => {
+      return db.agent.findUniqueOrThrow({ where: { id: agentId } });
+    });
+
+    const result = await step.run("execute-agent", async () => {
+      const { text, usage } = await generateText({
+        model: defaultModel,
+        system: agent.prompt,
+        prompt: input,
+      });
+      return { text, usage };
+    });
+
+    await step.run("save-result", async () => {
+      await db.agentExecution.update({
+        where: { id: executionId },
+        data: {
+          output: result.text,
+          status: "COMPLETED",
+          tokens: result.usage.totalTokens,
+        },
+      });
+    });
+
+    return { success: true, output: result.text };
+  }
+);
+```
+
+### `inngest/index.ts`
+```typescript
+export { agentExecutionFn } from "./functions/agentExecution";
+export { billingFn } from "./functions/billingSync";
+export { usageFn } from "./functions/usageTracking";
+```
+
+---
+
+## SECTION 9 — MIDDLEWARE
+
+### `middleware.ts`
+```typescript
+import { auth } from "@/lib/auth";
+import { NextResponse } from "next/server";
+
+export default auth((req) => {
+  const isLoggedIn = !!req.auth;
+  const { pathname } = req.nextUrl;
+
+  const protectedPaths = ["/dashboard", "/agents", "/workspace", "/billing", "/settings"];
+  const isProtected = protectedPaths.some((p) => pathname.startsWith(p));
+
+  if (isProtected && !isLoggedIn) {
+    return NextResponse.redirect(new URL("/login", req.url));
+  }
+
+  if (isLoggedIn && (pathname === "/login" || pathname === "/register")) {
+    return NextResponse.redirect(new URL("/dashboard", req.url));
+  }
+
+  return NextResponse.next();
+});
+
+export const config = {
+  matcher: ["/((?!api|_next/static|_next/image|favicon.ico).*)"],
+};
+```
+
+---
+
+## SECTION 10 — UI COMPONENTS
+
+### `app/layout.tsx` — Root Layout
+```typescript
+import type { Metadata } from "next";
+import { Inter, JetBrains_Mono } from "next/font/google";
+import "./globals.css";
+import { ThemeProvider } from "@/components/shared/ThemeProvider";
+
+const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
+const jetbrainsMono = JetBrains_Mono({
+  subsets: ["latin"],
+  variable: "--font-mono",
+});
+
+export const metadata: Metadata = {
+  title: "AIVerse 2.0 — AI Agent Platform",
+  description: "Discover, deploy, and monetize AI agents",
+};
+
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <html lang="en" suppressHydrationWarning>
+      <body className={`${inter.variable} ${jetbrainsMono.variable} font-sans bg-black text-white`}>
+        <ThemeProvider>{children}</ThemeProvider>
+      </body>
+    </html>
+  );
+}
+```
+
+### `app/globals.css`
+```css
+@import "tailwindcss";
+
+:root {
+  --background: #000000;
+  --foreground: #ffffff;
+  --primary: #00ffff;
+  --accent: #8b5cf6;
+  --muted: #1a1a1a;
+  --border: #2a2a2a;
+  --font-inter: "Inter", sans-serif;
+  --font-mono: "JetBrains Mono", monospace;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-inter);
+}
+
+::selection {
+  background: rgba(0, 255, 255, 0.2);
+  color: #ffffff;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #0a0a0a;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #2a2a2a;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #00ffff44;
+}
+```
+
+### `app/(marketing)/page.tsx` — Landing Page
+Build a stunning dark landing page with these sections:
+1. **Hero** — Full-screen with animated gradient text "Build. Deploy. Monetize AI Agents." + CTA buttons (Get Started → /register, Watch Demo)
+2. **Features** — 6-card grid: AI Workspace, Agent Builder, Agent Swarm, Real-time Streaming, Dual Payments, Enterprise Security
+3. **Pricing** — 3 tiers: Free (₹0), Pro (₹2,299/mo), Enterprise (₹7,999/mo) with feature lists and Stripe+Razorpay payment buttons
+4. **CTA** — Full-width banner with gradient background
+
+Style: void black background (`#000`), cyan (`#00ffff`) primary, violet (`#8b5cf6`) accent, glassmorphism cards with `backdrop-blur`, subtle grid pattern overlay.
+
+### `components/workspace/AIWorkspace.tsx` — 4-Panel IDE
+Build a resizable 4-panel workspace layout:
+- **Left panel** (280px default): Agent list sidebar, agent selector
+- **Center-top panel** (flex 1, 60% height): Monaco Editor with TypeScript support, dark theme
+- **Center-bottom panel** (flex 1, 40% height): xterm.js terminal, dark background, cyan cursor
+- **Right panel** (380px default): AI chat interface with useChat hook, streaming responses, message history
+
+Use CSS Grid for layout. Panels should be resizable via drag handles. All panels have dark backgrounds (`#0a0a0a`), thin cyan borders on active focus.
+
+### `components/dashboard/Sidebar.tsx`
+Dark sidebar with nav items: Dashboard, Agents, Workspace, Billing, Settings. Active state: cyan left border + subtle cyan background. Icons from lucide-react.
+
+---
+
+## SECTION 11 — NEXT.JS CONFIGURATION
+
+### `next.config.ts`
+```typescript
+import type { NextConfig } from "next";
+
+const nextConfig: NextConfig = {
+  experimental: {
+    serverComponentsExternalPackages: ["@prisma/client"],
+  },
+  images: {
+    remotePatterns: [
+      { protocol: "https", hostname: "**" },
+    ],
+  },
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
+  typescript: {
+    ignoreBuildErrors: false,
+  },
+};
+
+export default nextConfig;
+```
+
+---
+
+## SECTION 12 — PACKAGE.JSON SCRIPTS
+
+Ensure `package.json` has these scripts:
+```json
+{
+  "scripts": {
+    "dev": "next dev",
+    "build": "prisma generate && next build",
+    "start": "next start",
+    "lint": "next lint",
+    "db:push": "prisma db push",
+    "db:migrate": "prisma migrate dev",
+    "db:studio": "prisma studio",
+    "db:generate": "prisma generate",
+    "postinstall": "prisma generate"
+  }
+}
+```
+
+---
+
+## SECTION 13 — SENTRY CONFIGURATION
+
+Create `sentry.client.config.ts`, `sentry.server.config.ts`, and `sentry.edge.config.ts` with:
+```typescript
+import * as Sentry from "@sentry/nextjs";
+
+Sentry.init({
+  dsn: process.env.SENTRY_DSN,
+  tracesSampleRate: 1.0,
+  debug: false,
+});
+```
+
+---
+
+## SECTION 14 — GITHUB PUSH INSTRUCTIONS
+
+After scaffolding and implementing all code above, run these commands in sequence:
+
+```bash
+# 1. Initialize git if not already done
+git init
+
+# 2. Configure git identity
+git config user.email "mahadeva@aiverse.dev"
+git config user.name "Mahadeva Sarma"
+
+# 3. Create .gitignore
+cat > .gitignore << 'EOF'
+node_modules/
+.next/
+.env.local
+.env*.local
+*.log
+.DS_Store
+dist/
+.turbo/
+EOF
+
+# 4. Stage all files
+git add .
+
+# 5. Initial commit
+git commit -m "feat: AIVerse 2.0 complete architecture scaffold
+
+- Next.js 15 App Router with TypeScript strict mode
+- Prisma 7 + Neon PostgreSQL + pgvector
+- NextAuth.js v5 with JWT + Google OAuth
+- Vercel AI SDK + OpenRouter (moonshotai/kimi-k2:free)
+- Inngest background job processing
+- Stripe + Razorpay dual payment gateways
+- Upstash Redis caching
+- AWS S3 file storage
+- Sentry error tracking
+- 4-panel AI workspace (Monaco + xterm.js + SSE streaming)
+- Agent Builder + Agent Swarm architecture
+- Multi-tenant RBAC (FREE/PRO/ENTERPRISE)
+- Void black UI with cyan/violet branding"
+
+# 6. Set remote origin (replace with actual token if needed)
+git remote remove origin 2>/dev/null || true
+git remote add origin https://github.com/sarma45/Application.git
+
+# 7. Push to main
+git branch -M main
+git push -u origin main --force
+```
+
+**If authentication fails:** Replit will prompt for GitHub credentials. Use a GitHub Personal Access Token (PAT) as the password. Generate one at: https://github.com/settings/tokens → New token → Select `repo` scope.
+
+---
+
+## SECTION 15 — POST-BUILD VERIFICATION
+
+After the build completes, verify:
+
+```bash
+# Check TypeScript compiles
+npx tsc --noEmit
+
+# Check Prisma schema is valid
+npx prisma validate
+
+# Verify build
+npm run build
+```
+
+Fix any TypeScript or import errors before pushing.
+
+---
+
+## SECTION 16 — KNOWN CRITICAL RULES
+
+1. **NEVER use `bcrypt`** — always use `bcryptjs` for Linux runtime compatibility
+2. **NEVER create git submodules** — no `.gitmodules` file, no `git submodule add`
+3. **NEVER commit `.env.local`** — only commit `.env.example`
+4. **ALWAYS use `bcryptjs`** in `package.json` dependencies
+5. **ALWAYS use `prisma generate`** before building
+6. **Auth route**: `app/api/auth/[...nextauth]/route.ts` must export `{ GET, POST }` from `handlers`
+7. **Inngest route**: must export `GET`, `POST`, `PUT` from `serve()`
+8. **Stripe webhook**: use `stripe.webhooks.constructEvent()` with raw body (`text()` not `json()`)
+
+---
+
+## SUMMARY — WHAT YOU ARE BUILDING
+
+| Layer | Technology | Purpose |
+|---|---|---|
+| Frontend | Next.js 15, Tailwind, shadcn/ui | UI, SSR, routing |
+| Auth | NextAuth.js v5 | JWT sessions, Google OAuth |
+| Database | Neon PostgreSQL + Prisma 7 | All persistent data |
+| Vector DB | pgvector | Agent memory embeddings |
+| Cache | Upstash Redis | Rate limiting, session cache |
+| AI | OpenRouter + Vercel AI SDK | Agent execution, streaming |
+| Jobs | Inngest | Background agent runs, billing sync |
+| Payments | Stripe + Razorpay | USD + INR subscriptions |
+| Storage | AWS S3 | File uploads |
+| Monitoring | Sentry | Error tracking |
+| Deployment | Vercel | Production hosting |
+
+**Build everything. Push to GitHub. The complete production-ready scaffold must be committed.**
+
+---
+
+*AIVerse 2.0 Master Query — Generated for Replit Agent*
+*GitHub: sarma45/Application | Vercel: application-rosy-one.vercel.app*
